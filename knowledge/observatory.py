@@ -1,0 +1,100 @@
+"""Punto 4. Cinco reglas comunes a todos los casos de Observatorio Seguro."""
+from models.logic import Rule, atom
+
+
+def build_rules():
+    """Retorna una tupla de cinco Rule. Los hechos se cargan desde los escenarios.
+
+    Condiciones del observatorio:
+    R1. Un técnico es competente para una tarea si está asignado a ella,
+        la tarea requiere una especialidad y él está habilitado en esa especialidad.
+    R2. Una tarea está preparada en una franja si está en una zona con aislamiento
+        confirmado y ausencia de alerta confirmada para esa misma franja.
+    R3. Se autoriza una tarea si está programada en esa franja, su técnico asignado
+        está disponible y es competente para ella, y la tarea está preparada.
+    R4. Se bloquea una tarea programada si su zona tiene una alerta en esa franja.
+    R5. Se bloquea una tarea programada si el aislamiento de su zona falló en esa franja.
+
+    Predicados (argumentos en este orden):
+      Asignado(tarea, persona), Requiere(tarea, especialidad),
+      Habilitado(persona, especialidad), Competente(persona, tarea),
+      EnZona(tarea, zona), AislamientoConfirmado(zona, franja),
+      SinAlertaConfirmada(zona, franja), Preparada(tarea, franja),
+      Programada(tarea, franja), Disponible(persona, franja),
+      Autorizada(tarea, franja), Alerta(zona, franja),
+      AislamientoFallido(zona, franja), Bloqueada(tarea, franja).
+
+    Tips:
+    - atom('Competente', '?p', '?t') construye el átomo Competente(p, t).
+      En el código, '?p' y '?t' son variables; 'ana' es una constante.
+      En el PDF use variables sin '?' y los cuantificadores universales.
+    - Rule(nombre, descripcion, premisas, conclusion) recibe una tupla de
+      objetos Atom como premisas y un Atom como conclusión. La tupla representa
+      la conjunción; las variables de la regla se interpretan universalmente.
+    """
+    
+    return (
+        # R1: Competencia del tecnico
+        Rule(
+            'R1',
+            'Competencia del tecnico',
+            (
+                atom('Asignado', '?t', '?p'),
+                atom('Requiere', '?t', '?e'),
+                atom('Habilitado', '?p', '?e')
+            ),
+            atom('Competente', '?p', '?t')
+        ),
+
+        # R2: Preparacion de la tarea
+        Rule(
+            'R2',
+            'Preparacion de la zona',
+            (
+                atom('EnZona', '?t', '?z'),
+                atom('AislamientoConfirmado', '?z', '?f'),
+                atom('SinAlertaConfirmada', '?z', '?f')
+            ),
+            atom('Preparada', '?t', '?f')
+        ),
+
+        # R3: Autorizacion
+        Rule(
+            'R3',
+            'Autorizacion de la tarea',
+            (
+                atom('Programada', '?t', '?f'),
+                atom('Asignado', '?t', '?p'),
+                atom('Disponible', '?p', '?f'),
+                atom('Competente', '?p', '?t'),
+                atom('Preparada', '?t', '?f')
+            ),
+            atom('Autorizada', '?t', '?f')
+        ),
+
+        # R4: Bloqueo por alerta
+        Rule(
+            'R4',
+            'Bloqueo por alerta',
+            (
+                atom('Programada', '?t', '?f'),
+                atom('EnZona', '?t', '?z'),
+                atom('Alerta', '?z', '?f')
+            ),
+            atom('Bloqueada', '?t', '?f')
+        ),
+
+        # R5: Bloqueo por aislamiento fallido
+        Rule(
+            'R5',
+            'Bloqueo por aislamiento fallido',
+            (
+                atom('Programada', '?t', '?f'),
+                atom('EnZona', '?t', '?z'),
+                atom('AislamientoFallido', '?z', '?f')
+            ),
+            atom('Bloqueada', '?t', '?f')
+        )
+    )
+
+# FIN DEL BLOQUE DEL ESTUDIANTE
